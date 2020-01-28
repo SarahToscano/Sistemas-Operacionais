@@ -8,3 +8,5 @@ Lógica utilizada para o tempo de retorno - FCFS:
 |20|+|10|+|6|
 |20|+|10|+|6|+|8|
  n*20+ (n-1)*10 +...-Tempo de entrada -> n=numero de processos
+
+ Tem um bug no RR qnd eh 0
