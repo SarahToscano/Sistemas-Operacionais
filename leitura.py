@@ -1,169 +1,355 @@
 from operator import itemgetter
 import copy
+from pythonds.basic.stack import Stack
+from decimal import Decimal
+
+
 
 def FCFO(matriz, processos):
     tempo_espera=0; tempo_retorno=0; tempo_resposta=0
     aux=0; count=0; j=1 #j aponta para a coluna do tempo de saida
-    soma_retorno=0; n=processos; linhas=processos
+    soma_retorno=0; n=processos; linhas=processos;sum=0
+    matriz_2=copy.deepcopy(matriz)
+    #print('\n\n|------------------- FCFS --------------------|')
+    #print('| Dados:', matriz_2, '|')
+    historico=[];time=0;initial_time=[0]*processos;count=0
+
     for i in range (0,linhas):
-        if(i==0):
-            tempo_espera = 0
-            aux = matriz[i][j]
-            soma_retorno=n*matriz[i][j] #multiplica o valor pela quantidade de repetições, lógica no README.txt
-            soma_retorno-=matriz[i][0]  #retira o valor do tempo de entrada
-        else:
-            n=n-1
-            soma_retorno+=n*matriz[i][j]
-            soma_retorno-=matriz[i][0]
-            tempo_espera+=aux-matriz[i][0]#retira o tempo de entrada, por isso j=0
-            aux+=matriz[i][j]
-    tempo_espera=tempo_espera/processos
-    tempo_retorno=soma_retorno/processos
+        if(time<matriz_2[i][0]):
+            for k in range(time,matriz_2[i][0]):
+                historico.append(-1)
+            time=matriz_2[i][0]
+
+        while(matriz_2[i][1]):#enquanto o processo ainda for valido
+            if (count == 0):
+                initial_time[i] = time
+            time+=1
+            matriz_2[i][1]-=1
+            historico.append(i)
+            count=1
+        count=0
+    #print('historico',historico)
+    #print('tempo inicial', initial_time)
+
+    rev = copy.deepcopy(historico)
+    rev.reverse()
+    #print('reverso',rev)
+    width=len(historico)
+    sum=0
+    last=[0]*processos
+
+    for i in range(0,processos):
+        sum+=initial_time[i]-matriz_2[i][0]
+    tempo_espera=sum/processos
+    #print('esperaa',tempo_espera)
     tempo_resposta=tempo_espera
+    #print('resposta',tempo_resposta)
+
+    sum=0
+    for k in range (0, processos):
+        sum+=initial_time[k]+historico.count(k)-matriz_2[k][0]
+
+    tempo_retorno=sum/processos
+    #print('retornoo',tempo_retorno)
+    #print('|---------------------------------------------|\n')
 
     return tempo_retorno,tempo_resposta,tempo_espera
 
-def RR(matriz,matriz_2, processos, quantum):
-    tempo_espera = 0; tempo = 0; tempo_retorno = 0; tempo_resposta = 0
-    j = 1; count = 0; aux = 0; index=[]; linhas=processos
+def insert_pilha(matriz_2,processos,pilha,referencia): #insere os processos de acordo com o prox tempo
+    #print('referencia', referencia)
+    for i in range(0,processos):
+        #print('verfica se ', 'matriz[', i, 0, '] ==', referencia)
+        if(matriz_2[i][0]==referencia):
+            pilha.append(i)
+            #print(pilha)
 
-    while (count != processos):
-        for i in range(0, linhas):
-            aux += processos - quantum
-            for q in range(0, quantum):  # Rerira somente o que tiver disponivel a partir do quantum
-                if (matriz_2[i][j]):
-                    #print('aaa',matriz_2)
-                    matriz_2[i][j] -= 1  # Retira o tempo do quantum
-                    index.append(i + 1)
-                    if (matriz_2[i][j] == 0):
-                        count += 1
-                else:
+
+def RR(matriz, processos, quantum):
+    matriz_2=copy.deepcopy(matriz)
+    matriz_2.sort(key=itemgetter(0))
+
+    tempo_espera = [0]*processos; tempo_retorno = 0; tempo_resposta = 0
+    time = 0; end_time=[0]*processos; initial_time=[0]*processos;last=[0]*processos
+    count = 0; pilha=[]; rev=[];historico=[]
+    #print('\n\n|------------------- RR --------------------|')
+    #print('| Dados:',matriz_2,'|')
+    time=matriz[0][0]
+    insert_pilha(matriz_2, processos, pilha, matriz_2[0][0]) #Aloca todos os processos de tempo inicial [0][0]
+    #print('\npilha inicial:',pilha)
+    antes=0
+
+    if(time!=0):
+        for i in range(0,time):
+            historico.append(-1)
+
+    while(pilha!=[]):
+        id=pilha[0] #Salva o indice do processo da pilha
+        #print('id:', id)
+        for i in range (0,quantum):
+            if((matriz_2[id][1])):
+                matriz_2[id][1]-=1
+                time+=1
+                #print('executou processo:', id)
+                historico.append(id)
+                #print('time',time,' -- matriz',matriz_2)
+        if(pilha!=[]):
+            maior=max(pilha)
+        #print('maior',maior)
+        pilha.remove(pilha[0])
+        #print('processo removido:', pilha)
+        #print('pilha',pilha,'\n')
+        if(maior!=processos-1):
+            #print('matriz[maior][0]:',matriz_2[maior][0],'!= matriz[maior+1][0]:',matriz_2[maior+1][0])
+            if(matriz_2[maior][0]!=matriz_2[maior+1][0]):
+                #print('time',time,'>= matriz[maior+1][0]',matriz_2[maior+1][0])
+                if(time>=matriz_2[maior+1][0]):
+                    #print('houve inserção na lista\n')
+                    #print('referncia', matriz_2[maior+1][0])
+                    insert_pilha(matriz_2,processos,pilha,matriz_2[maior+1][0])
+                    #print('pilha',pilha,'\n')
+        #print('IF matriz[',id,'[',1,'] = ',matriz_2[id][1])
+        if (matriz_2[id][1]):  # Se o processo ainda existir, volta a lista
+            #print('add o processo q n foi concluido- id', id)
+            pilha.append(id)
+        #print(pilha)
+        if(pilha==[]):#diferenca de duas unidades no tempo de enrtada
+            #print('pilha vaziaaaaaaaaaaa')
+            #print(matriz_2)
+            for k in range (0,processos):
+                if(matriz_2[k][1]!=0):
+                    #print('time antes:', time)
+                    for l in range(time,matriz_2[k][0]):
+                        historico.append(-1)##Sinaliza que tem uma lacuna no escalonador
+                    time=matriz_2[k][0]
+                    #print('time now', time)
+                    pilha.append(k)
+                    #print(pilha)
+                    count=1
+                if(count==1):
                     break
-    count = 0
+            count =0
 
-    rev = copy.deepcopy(index)
-    rev.reverse() #facilita o momento de finalização dos processos
-    #print('lista normal :', index)
-    #print('lista reversa:', rev)
+    #print('historico',historico) #Ordem de execução dos processos
 
-    i = 0; k = 1; flag = 0
-    count = [0] * processos
-    soma = [0] * processos
-    stop = [0] * processos
+#Calcula-se os tempos analisando a ultima vez q foi executado e a primeira
+    rev = copy.deepcopy(historico)
+    rev.reverse()  # facilita o momento de finalização dos processos
+    #print('reverso  ', rev)
+    width=len(historico)
+    #print('len do historico', width)
+    k = 0;count=0;aux=1;
 
-    for k in range(1, processos + 1):
-        while ((rev[i] != k)):  # percorre a lista ao contrario p achar o momento  em q o processo foi inicializado pela ultima x
-            if (i == len(rev)):
+    for k in range(0,processos):
+        #print('processo', k)
+        for i in range(0,width):
+            if(k==rev[i]):
+                end_time[k]+=aux
+                count=1
+                aux=1
+            elif((k!=rev[i])&(count==0)):
+                aux+=1
+            else:break
+        aux=1
+        count=0
+        #print('end time no reverso', end_time) #Salva o isntate que o processo executou pela ultima x
+
+
+    #Subtrai o tamanho do historico das ultimas repetiçoes p saber o tempo de exec da ultima vez
+    for k in range(0,processos):
+        end_time[k]=width-end_time[k]
+    #print('end_time',end_time)
+    #O endtime tem o instante t da ultima de execucao dos processos
+
+    for k in range(0,processos):
+        for i in range(0,width):
+            #print('busca ', k,'no historico', historico[i])
+            if(k==historico[i]):
+                #print('tempo inicial[',k,']:',initial_time[k],'=',i)
+                initial_time[k]=i
                 break
-            i += 1
-        count[k - 1] = i
-        i = 0
-    # Esse for acha a primeira ocorrencia do processo na lista reversa
-    #print('count:', count)
-    i = 0
 
-    for k in range(1, processos + 1):
-        i = 0
-        while (i < len(rev)):
-            if (i == 0):  # percorre a partir da 1 ocorrencia
-                i = copy.deepcopy(count[k - 1])
-            if (rev[i] != k):
-                soma[k - 1] += 1
-            i += 1
-    #print('soma com tempo de entrada: ', soma)  # soma as ocorrencias dos outros processos = a qntdd de tempo na fila
-
-    for k in range(1, processos + 1):
-        soma[k - 1] -= matriz[k - 1][0]  # retira o tempo de entrada
-    #print('soma sem tempo de entrada: ', soma)
-
-    for k in range(1, processos + 1):
-        tempo_espera += soma[k - 1]
-        tempo_retorno+=len(rev)-count[k-1] #acha o tempo da ultima execucao do programa
-
-    tempo_espera = tempo_espera / processos
-    tempo_retorno=tempo_retorno/processos
-
-    soma=[0]*processos
-    i=0;count=0
-    #print(index)
-    for k in range(1, processos + 1):
-        while ((index[i] != k)):  # percorre a lista INDEX p achar o momento  em q o processo foi inicializado pela ultima x
-            if (i == len(index)):
+        for i in range (0,width):
+            if(k==rev[i]):
+                last[k]=i #Cria uma lista com a ultima ocorrencia do tempo p calcular o tempo de retorno
                 break
-            soma[k-1]+=1
-            i=i+1
+
+    #Acha tempo de inicio de cada processo
+    #print('tempo de inicio',initial_time)
+    #BUGS -> ADICIONAR A FLAG -1 P QND N TIVER PROCESSO NO ESCALONADOR - Corrigido!
+    #AJEITAR O TEMPO DE INICIO COM BASE NESSA ALTERAÇÃO
+
+    #Calculo do tempo de espera
+    #Agora faz-se o seguinte calculo:
+        #Para cada processo calcula-se o tamanho entre o end_time e o begin_time
+        #Verifica qnts vezes o processo foi chamado neste intervalo
+        #subtrai o valor do intervalo (para saber qnts vezes n foi chamado)
+        #obtrm-se o tempo de espera do processo
+    aux=0;repeticoes=0;sum=0;count=0
+    for k in range(0,processos):
+        #print('\nprocesso',k,'--endtime',end_time[k],'initial time--',initial_time[k])
+        #print('zerando rept', repeticoes)
+        aux=end_time[k]-initial_time[k]
+        for i in range(initial_time[k],end_time[k]):#conta os processos que nao sao igais ao k
+            '''if((initial_time[k]>matriz_2[k][0])&(count==0)): #Não lembro o motivo de colocar isso
+                repeticoes=initial_time[k]-matriz_2[k][0]
+                count=1'''
+            #print(historico)
+            #print('historico[',i,']:',historico[i],'!=',k)
+            if(historico[i]!=k):
+                if(historico[i]!=-1):
+                    repeticoes+=1
+                    #print('repeticoes:', repeticoes)
+        #print('processo [',k,'] repetido', repeticoes)
+        sum+=repeticoes+(initial_time[k]-matriz_2[k][0])
+        #print('sum',sum)
+        repeticoes=0
+        count=0
+    tempo_espera=sum/processos
+    #print('espera:',tempo_espera)
+    sum=0
+
+    #Calculo do tempo de resposta
+    #print(initial_time)
+    for k in range(0,processos):
+        sum+=initial_time[k]-matriz_2[k][0]
+    tempo_resposta=sum/processos
+
+    sum=0
+    #Calculo do tempo de retorno
+    #print(last)
+    for i in range(0,processos):
+        last[i]=width-last[i]-matriz_2[i][0]
+        sum+=last[i]
+    #print(last)
+    tempo_retorno=sum/processos
+    #print('historico',historico)
+    #print('|-------------------------------------------|\n')
+    return(tempo_retorno,tempo_resposta,tempo_espera)
+
+
+def SJF(matriz, processos):
+    tempo_ini = [0]*processos; duracao=0
+    time=0; flag=0
+    tempo_espera=0;tempo_resposta=0;tempo_retorno=0
+    s=Stack();i=0
+
+    matriz_2=copy.deepcopy(matriz)
+    matriz_2.sort();count2=1000
+    #print(matriz_2)
+    time=0; historico=[]; pilha=[]; initial_time=[0]*processos
+
+    #print('\n\n|------------------- SJF --------------------|')
+    #print('| Dados:', matriz_2, '|')
+
+    if(time!=matriz_2[0][0]):
+        for i in range(time,matriz_2[0][0]):
+            historico.append(-1)
+        time=matriz_2[0][0]
+    #print('historico inicial', historico)
+    #print('tempo de inicio', time)
+
+    end_time=[0]*processos
+    count =0;
+    stop=[]
+    for i in range(0, processos):
+        s.push(i)
+    initial_time[0] = matriz_2[0][0]
+
+    while(not(s.isEmpty())):
+        #print('executa o for')
         i=0
-    #soma neste momento tem o tempo de inicio da primeira execução dos processos
-    count=0
-    for k in range(1, processos+1):
-        soma[k-1]-=matriz[k-1][0]#retira tempo de entrada
-        count+=soma[k-1]#somatorio de 'soma' tempo da primeira execucao de todos os processos
-    #print("count", count)
-    tempo_resposta=count/processos
-
-    return(tempo_retorno,tempo_resposta,tempo_espera)
-
-
-def SJF(matriz, linhas):
-    tempo_ini = [0]*linhas; duracao=[0]*linhas
-    time=0;exec=[0]*linhas; maior=0; menor=0; index=0
-    tempo_espera=0;tempo_resposta=0;tempo_retorno=0;acc=0
-    output=[0]*3
-
-    for i in range (0, linhas):
-        tempo_ini[i] = matriz[i][0]
-        duracao[i]=matriz[i][1] #calcula duracao dos processos
-    maior=max(tempo_ini)
-    time=0; aux=0;count=0
-
-    while(not(all(duracao[i]==0 for i in range (0,linhas)))): #enqt a lista de duracao estiver preenchida
-        #print('duracao:', duracao)
-        aux=index
-        index = 0
-        menor = 2048
-        for i in range(0, linhas):
-            if ((duracao[i]!=0) & (duracao[i]< menor) & (matriz[i][0] <= time)):  # encontra o menor processo ja iniciado
-                menor = duracao[i]
-                index = i
-        #print('menor valor: ', duracao[index])
-        if (time > maior):
-            if(aux!=index):
-                tempo_espera += time - tempo_espera
-                #print('processo iniciado: ', index, '   tempo de espera', tempo_espera)
-                acc+=tempo_espera-matriz[index][0]
-            #print('tempo de entrada ultrapassado')# verifica se o maior tempo de entrada ja foi ultrapassado
-            for i in range(0, duracao[index]):
-                duracao[index] -= 1  # executa o processo de menor duracao ate zerar
-                time += 1
-                #print(' -- processo[', index +1, ']: ', duracao[index], '  time:', time)
-        else:
-            if(duracao[index]>0):
-                #print('aux:', aux, 'index:', index) #verifica se não eh o msm processo sendo excutado
-                if (aux != index): #mudanca de escalonamento
-                    count = 0
-
+        count2=1000
+        #for i in range(0,processos):
+        while(i<processos):
+            #print('PROCESSO:',i)
+            #print('tempo',time,'---',matriz_2[i][1], 'é valido?')
+            count2 = 1000
+            #print('count2',count2)
+            if(matriz_2[i][1]):
                 if(count==0):
-                    aux=index
-                    tempo_espera += time - tempo_espera
-                    #print('processo iniciado: ', index, '   tempo de espera', tempo_espera)
-                    acc += tempo_espera -matriz[index][0]
-                duracao[index] -= 1
-                time += 1
-                #print(' --> processo[', index+1, ']: ', duracao[index], '   time:', time)
-        if(duracao[index]==0):
-            tempo_retorno+=time - matriz[index][0]
-        count+=1
-        #print('')
-    tempo_espera=acc/linhas
-    tempo_resposta=tempo_espera
-    tempo_retorno=tempo_retorno/linhas
+                    #print('processo',i,'iniciado em ', initial_time[i])
+                    #print('enqanto existir processo ele vai diminuir')
+                    while (matriz_2[i][1]):
+                        historico.append(i)
+                        matriz_2[i][1] -= 1
+                        time += 1
+                        #print('time --', time, '--matriz', matriz_2)
+                    if (matriz_2[i][1] == 0):
+                        end_time[i] = time
+                        #print('processo', i, 'encerrado em ', end_time[i])
+                    matriz_2.sort(key=itemgetter(1)) #Ordena de acordo com a duracao
 
-    #print('tempo retorno:', tempo_retorno)
-    #print('tempo de resposta:', tempo_resposta)
-    #print('tempo de espera:', tempo_resposta)
+                else:
+                    #print('matriz', matriz_2)
+                    #print(matriz_2[i][1], 'é valido?')
+                    if (matriz_2[i][1]):
+                        #print(time,'>=', matriz_2[i][0])
+                        if(time>=matriz_2[i][0]):
+                            initial_time[i]=time
+                            #print('processo iniciado em',initial_time[i])
+                            #print('enqanto existir processo ele vai diminuir')
+                            while(matriz_2[i][1]):
+                                historico.append(i)
+                                matriz_2[i][1]-=1
+                                time+=1
+                                #print('time --',time,'--matriz', matriz_2)
+
+                if(matriz_2[i][1]==0):
+                    end_time[i]=time
+                    #print('processo',i,'encerrado em ', end_time[i])
+                    #print('ennnd',end_time)
+                    s.pop()
+                    #print('\n')
+                    #matriz_2.sort(key=itemgetter(1))
+                    #print('reorganiza', matriz_2)
+                    i = processos + 1
+                    #print(historico)
+            count = 1
+            flag=0
+            i+=1
+            #print('valor de i', i)
+        for k in range(0,processos):
+            if(matriz_2[k][1]!=0): #Salva o menor tempo de entrada dos processos n executados
+                #print('processo[',k, 'nao vazio')
+                if(matriz_2[k][0]<count2):
+                    #print(count2)
+                    count2=matriz_2[k][0]
+        #print('menor tempo de inicializaçao', count2)
+        if(not(s.isEmpty())):
+            #print('a lista nao esta vazia')
+            for k in range(time,count2):
+                time += 1
+                #print('tempo ocioso, add -1')
+                #print('time', time)
+                historico.append(-1)
+                #print(historico)
+        #if(s.isEmpty()):
+            #print('lista VAZIAAAAAAAAAAAAAAAAAAAAAA')
+
+    #print('hitorico',historico)
+    #print('tempo de inicio',initial_time)
+    #print('tempo final',end_time)
+
+    aux=[0]*processos;
+    sum=0
+
+    for i in range (0,processos):
+        aux[i]=initial_time[i]-matriz_2[i][0]
+        sum+=aux[i]
+    tempo_espera=sum/processos
+    #print('tempo de espera', tempo_espera)
+    tempo_resposta=tempo_espera
+    #print('tempo de resposta', tempo_resposta)
+
+    sum=0
+    for i in range(0,processos):
+        aux[i]=0
+        aux[i]=end_time[i]-matriz_2[i][0]
+        sum+=aux[i]
+    tempo_retorno=sum/processos
+    #print('tempo de retorno', tempo_retorno)
 
     return(tempo_retorno,tempo_resposta,tempo_espera)
-
 
 #------------------------------------------------------------------------------------------------------------
 def main():
@@ -173,7 +359,6 @@ def main():
 
     texto=texto.split() #quebra os dados de acordo com os espaços
     texto_num = list(map(int, texto)) #Converte os numeros de string para inteiro
-    #print("Lista:", texto_num)
     linhas = int(len(texto) / 2)  # calcula o numero de processos|linhas
     count=0; n=linhas; quantum=2
     matriz = [];flag=1
@@ -182,28 +367,25 @@ def main():
         linha = []
         for j in range(0,2):
             if(j==1):
-                if(texto_num[count]==0):
-                    print('O processo com duracao nula foi removido do escalonador')
+                if(texto_num[count]==0): #Verifica se existe processo com duração 0
+                    #print('O processo com duracao nula foi removido do escalonador')
                     flag=0
                     linhas-=1
-
             linha.append(texto_num[count])
-            print("texto:",texto_num[count])
             count=count+1
         if(flag==1):
             matriz.append(linha) #matriz desordenada pelo tempo de entrada do processo
-            print("matriz.append:", matriz)
         flag =1
 
-    matriz.sort(key=itemgetter(0)) #Organiza a matriz de acordo com o tempo de entrada ->coluna(0)
-    print("Dados:", matriz)
+    matriz.sort(key=itemgetter(0))  #Organiza a matriz de acordo com o tempo de entrada ->coluna(0)
+    #print("Dados lidos do arquivo:", matriz)
 
 
     matriz_2=copy.deepcopy(matriz) #copia da matriz original para poder alterar os valores do tempo de duração
     SJF_v=0
 
     FCFO_v = (FCFO(matriz,linhas))
-    RR_v= (RR(matriz,matriz_2,linhas,quantum))
+    RR_v= (RR(matriz,linhas,quantum))
     SJF_v= (SJF(matriz,linhas))
 
     #desempactomento de tuplas
@@ -211,25 +393,13 @@ def main():
     d,e,f= SJF_v
     g,h,i= RR_v
 
+    print('\nFCFS', round(a,1), round(b,1), round(c,1))
+    print('SJF ', round(d,1), round(e,1), round(f,1))
+    print('RR  ', round(g,1), round(h,1), round(i,1))
 
-    print('\nFCFO', FCFO_v)
-    print('SJF', SJF_v)
-    print('RR', RR_v)
-
-    with open('output.txt', 'w') as arquivo:
+    '''with open('output.txt', 'w') as arquivo:
         arquivo.write("FCFS " + str(a) +' ' + str(b) + ' '+ str(c) + "\n")
         arquivo.write("SJF " + str(d) +' ' + str(e) + ' '+ str(f) + "\n")
-        arquivo.write("RR " + str(g) +' ' + str(h) + ' '+ str(i) + "\n")
-
+        arquivo.write("RR " + str(g) +' ' + str(h) + ' '+ str(i) + "\n")'''
 
 main()
-
-
-
-
-
-
-
-
-
-
