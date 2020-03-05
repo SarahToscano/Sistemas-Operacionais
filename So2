@@ -1,0 +1,54 @@
+from operator import itemgetter
+import copy
+from pythonds.basic.stack import Stack
+from decimal import Decimal
+
+def main():
+    texto = []
+    with open('input.txt') as arq:
+        texto = arq.read()
+
+    texto=texto.split() #quebra os dados de acordo com os espaços
+    seq = list(map(int, texto)) #Converte os numeros de string para inteiro
+    quadros=seq[0]
+    paginas = int(len(seq)-1)  # calcula o numero de paginas
+    s = Stack()
+    table=[-1]*quadros
+
+    seq.remove(seq[0])
+    seq2 = copy.deepcopy(seq)
+    s.push(-1) #Obriga a entrar no laço do FIFO
+
+    FIFO(paginas, quadros,s,table,seq2)
+
+def FIFO(paginas,quadros, s,table,seq2):
+    historico=[]
+    faltas=-1
+
+    while (not (s.isEmpty())):
+        if(-1 in table):
+            if(paginas>=quadros):
+                s.pop()
+                for i in range(0, quadros):
+                    s.push(seq2[i])
+                for i in range (0,quadros):
+                    print("\n [i]=",i)
+                    print("sequencia atual:", seq2)
+                    print("movendo:", seq2[0], "para a tabela")
+                    table[i]=seq2[0]
+                    print("tabela", table)
+                    seq2.remove(seq2[0])
+                    print("sequencia nova:", seq2)
+                    historico.append(table[i])
+                    s.pop()
+            else:
+                faltas=0
+                s.pop()
+                print("faltas:", faltas)
+
+
+
+
+
+
+main()
