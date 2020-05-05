@@ -1,3 +1,8 @@
+#Autora: Sarah Andrade Toscano de Carvalho
+#Projeto desenvolvido na disciplina de Sistemas Operacionais - UFPB/CI
+
+                      REQUISIÇÕES DO PROJETO:
+
 -> Programa 01: Escalonador de CPU
 
    Neste projeto você deve implementar um conjunto de algoritmos de escalonamento de CPU e escrever um programa que calcula uma série de      estatísticas baseado nestes algoritmos. ¨ Os algoritmos de escalonamento a serem implementados são os seguintes:
