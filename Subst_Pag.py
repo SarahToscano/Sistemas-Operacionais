@@ -6,7 +6,7 @@ from decimal import Decimal
 
 def main():
     texto = []
-    with open('input.txt') as arq:
+    with open('Subst_Pag_input_data.txt') as arq:
         texto = arq.read()
 
     texto = texto.split()  # quebra os dados de acordo com os espaços
