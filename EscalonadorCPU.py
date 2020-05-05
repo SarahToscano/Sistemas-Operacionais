@@ -395,7 +395,7 @@ def SJF(matriz, processos):
 
 def main():
     texto = []
-    with open('test.txt') as arq:
+    with open('Escalonador_input data.txt') as arq:
         texto = arq.read()
 
     texto = texto.split()  # quebra os dados de acordo com os espaços
@@ -447,10 +447,10 @@ def main():
     print('SJF ', round(d, 1), round(e, 1), round(f, 1))
     print('RR  ', round(g, 1), round(h, 1), round(i, 1))
 
-    '''with open('output.txt', 'w') as arquivo:
+    with open('EscalonadorOutput.txt', 'w') as arquivo:
         arquivo.write("FCFS " + str(a) +' ' + str(b) + ' '+ str(c) + "\n")
         arquivo.write("SJF " + str(d) +' ' + str(e) + ' '+ str(f) + "\n")
-        arquivo.write("RR " + str(g) +' ' + str(h) + ' '+ str(i) + "\n")'''
+        arquivo.write("RR " + str(g) +' ' + str(h) + ' '+ str(i) + "\n")
 
 
 main()
